@@ -1,38 +1,41 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+import requests,json
 from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-import requests,json,request
+from models import Car, Base
+from pydantic import BaseModel
 
-SQLALCHEMY_DATABASE_URL = "sqlite:///./sql_app.db"
-# SQLALCHEMY_DATABASE_URL = "postgresql://user:password@postgresserver/db"
 
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
-)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-Base = declarative_base()
+engine = create_engine("sqlite:///./base.sqlite",echo=True)
+Session = sessionmaker(bind=engine)
+session = Session()
 app = FastAPI()
 
-class Car(db.Model):
-    id = db.Integer
-    make = db.String
-    model = db.String
-    avg_rating = db.Float
+class RequestCar(BaseModel):
+    make : str
+    model : str
 
-def getMakesModelData(make):
+def createBase(engine):
+    Base.metadata.create_all(engine)
+
+def getMakesModelsData(make):
     url = 'https://vpic.nhtsa.dot.gov/api/vehicles/GetModelsForMake/'+make+'?format=json'
     data = requests.get(url).json()
-    return data['results']
+    return data['Results']
 
 @app.post('/cars') #ma być post!
-async def postCars():
+def postCars(requestCar : RequestCar):
+    modelsBase = [vehicle['Model_Name'] for vehicle in getMakesModelsData(requestCar.make)]
+    if requestCar.model.capitalize() in modelsBase:
+        car = Car(make=requestCar.make, model=requestCar.model)
+        session.add(car)
+        session.commit()
+        return {'message':'Car saved to base'}
+    else:
+        return {'message':'Error - there is no car like '+car.make+' '+car.model}
 
-    requestData = requests.body #dokonczyc
-    return {'message':'car'+requestData['make']}
 
-@app.delete('/cars/'{id})
+@app.delete('/cars/{id}')
 async def deleteCar(id):
     if Car.query.get(id):
         try:
@@ -59,10 +62,11 @@ async def rateCar():
 
 
 @app.get('/cars')
-async def getCars():
-    pass
+def getCars():
+    return session.query(Car).all()#zwraca liste - dopracowac
 
 
 @app.get('/popular')
-async def getPopularCars():
-    pass
+def getPopularCars():
+    carList = session.query(Car).all()
+    return session.query(Car).all()

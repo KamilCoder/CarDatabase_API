@@ -15,6 +15,10 @@ class RequestCar(BaseModel):
     make : str
     model : str
 
+class RequestRating(BaseModel):
+    car_id : int
+    rating : int
+
 def createBase(engine):
     Base.metadata.create_all(engine)
 
@@ -39,25 +43,25 @@ def postCars(requestCar : RequestCar):
 async def deleteCar(id):
     if Car.query.get(id):
         try:
-            Car.delete(id) # DOKONCZYC
-            db.session.commit()
+            session.delete(id) # DOKONCZYC
+            session.commit()
             return {'msg':'Car deleted'}
         except:
-            db.session.rollback()
+            session.rollback()
     else:
         return {'error':"Car doesn't exist in db"}
 
 @app.post('/rate')
-async def rateCar():
-    requestCarId = request.body['id']
-    requestCarRating = request.body['rating'] #SPRAWDZIC
-    car = Car.query.get(requestCarId)
-    car.avg_rating+=requestCarRating
-    car.ratingsCounter+=1
+async def rateCar(requestRate : RequestRate):
+    car = Car.query.get(requestRate.car_id) #query get?
+    car.rates_number+=1
+    car.avg_rating = (car.avg_rating + requestRate.rating)/car.rates_number #dokonczyc obliczanie
     try:
         db.session.add(car)
         db.session.commit()
+        return {'message':'OK'}
     except:
+        session.rollback()
         return {'error':'Error while rating car'}
 
 

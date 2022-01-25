@@ -2,11 +2,11 @@ from fastapi import FastAPI, Request
 import requests,json
 from sqlalchemy import create_engine, desc
 from sqlalchemy.orm import sessionmaker
-from models import Car, Base
+from models import Car, Base, Rate
 from pydantic import BaseModel
 
 
-engine = create_engine("sqlite:///./base.sqlite",echo=True)
+engine = create_engine("sqlite:///./base.sqlite?check_same_thread=False",echo=True)
 Session = sessionmaker(bind=engine)
 session = Session()
 app = FastAPI()
@@ -31,19 +31,24 @@ def getMakesModelsData(make):
 def postCars(requestCar : RequestCar):
     modelsBase = [vehicle['Model_Name'] for vehicle in getMakesModelsData(requestCar.make)]
     if requestCar.model.capitalize() in modelsBase:
-        car = Car(make=requestCar.make, model=requestCar.model)
-        session.add(car)
-        session.commit()
-        return {'message':'Car saved to base'}
+        try:
+            car = Car(make=requestCar.make.capitalize(), model=requestCar.model.capitalize())
+            session.add(car)
+            session.commit()
+            return {'message':'Car saved to base'}
+        except:
+            session.rollback()
+            return {'message':'Error while saving car to base'}
     else:
         return {'message':'Error - there is no car like '+requestCar.make+' '+requestCar.model}
 
 
 @app.delete('/cars/{id}')
-async def deleteCar(id):
-    if Car.query.get(id):
+def deleteCar(id):
+    car = session.query(Car).get(id)
+    if car:
         try:
-            session.delete(id) # DOKONCZYC
+            session.delete(car) # DOKONCZYC
             session.commit()
             return {'msg':'Car deleted'}
         except:
@@ -52,27 +57,31 @@ async def deleteCar(id):
         return {'error':"Car doesn't exist in db"}
 
 @app.post('/rate')
-async def rateCar(requestRate : RequestRate):
-    car = Car.query.get(requestRate.car_id) #query get?
-    car.rates_number+=1
-    car.avg_rating = (car.avg_rating + requestRate.rating)/car.rates_number #dokonczyc obliczanie
-    try:
-        db.session.add(car)
-        db.session.commit()
-        return {'message':'OK'}
-    except:
-        session.rollback()
-        return {'error':'Error while rating car'}
+def rateCar(requestRate : RequestRate):
+    car = session.query(Car).get(requestRate.car_id)
+    if car:
+        car.rate.append(Rate(rate=requestRate.rating))
+        car.rates_number+=1
+        car.avg_rating = float(sum([rating.rate for rating in car.rate])/car.rates_number)
+        try:
+            session.add(car)
+            session.commit()
+            return {'message':'OK'}
+        except:
+            session.rollback()
+            return {'error':'Error while rating car'}
+    else:
+        return {'error':"car doesn't exist in database"}
 
 
 @app.get('/cars')
 def getCars():
     carList = session.query(Car).all()
-    return ({'id':car.id,'make':car.make,'model':car.model,'avg_rating':car.avg_rating} for car in carList)#zwraca liste - dopracowac
+    return ({'id':car.id,'make':car.make,'model':car.model,'avg_rating':car.avg_rating} for car in carList)
 
 
 @app.get('/popular')
 def getPopularCars():
-    return session.query(Car).order_by('id'desc())
-
-    #return ({'id':car.id,'make':car.make,'model':car.model,'avg_rating':car.avg_rating} for car in carList)
+    carList = session.query(Car).order_by(Car.rates_number.desc())
+    session.rollback()
+    return ({'id':car.id,'make':car.make,'model':car.model,'rates_number':car.rates_number} for car in carList)

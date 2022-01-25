@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Request
 import requests,json
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, desc
 from sqlalchemy.orm import sessionmaker
 from models import Car, Base
 from pydantic import BaseModel
@@ -15,7 +15,7 @@ class RequestCar(BaseModel):
     make : str
     model : str
 
-class RequestRating(BaseModel):
+class RequestRate(BaseModel):
     car_id : int
     rating : int
 
@@ -36,7 +36,7 @@ def postCars(requestCar : RequestCar):
         session.commit()
         return {'message':'Car saved to base'}
     else:
-        return {'message':'Error - there is no car like '+car.make+' '+car.model}
+        return {'message':'Error - there is no car like '+requestCar.make+' '+requestCar.model}
 
 
 @app.delete('/cars/{id}')
@@ -67,10 +67,12 @@ async def rateCar(requestRate : RequestRate):
 
 @app.get('/cars')
 def getCars():
-    return session.query(Car).all()#zwraca liste - dopracowac
+    carList = session.query(Car).all()
+    return ({'id':car.id,'make':car.make,'model':car.model,'avg_rating':car.avg_rating} for car in carList)#zwraca liste - dopracowac
 
 
 @app.get('/popular')
 def getPopularCars():
-    carList = session.query(Car).all()
-    return session.query(Car).all()
+    return session.query(Car).order_by('id'desc())
+
+    #return ({'id':car.id,'make':car.make,'model':car.model,'avg_rating':car.avg_rating} for car in carList)

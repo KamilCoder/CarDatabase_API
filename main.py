@@ -29,7 +29,7 @@ def getMakesModelsData(make):
 
 @app.get('/')
 def index():
-    return <h1>'Welcome in Car Database API app'</h1>
+    return '''<html><h1>'Welcome in Car Database API app'</h1></html>'''
 
 @app.post('/cars')
 def postCars(requestCar : RequestCar):

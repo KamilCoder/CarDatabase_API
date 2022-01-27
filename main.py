@@ -27,7 +27,11 @@ def getMakesModelsData(make):
     data = requests.get(url).json()
     return data['Results']
 
-@app.post('/cars') #ma być post!
+@app.get('/')
+def index():
+    return <h1>'Welcome in Car Database API app'</h1>
+
+@app.post('/cars')
 def postCars(requestCar : RequestCar):
     modelsBase = [vehicle['Model_Name'] for vehicle in getMakesModelsData(requestCar.make)]
     if requestCar.model.capitalize() in modelsBase:
@@ -77,9 +81,8 @@ def rateCar(requestRate : RequestRate):
 @app.get('/cars')
 def getCars():
     carList = session.query(Car).all()
-    #response.headers["charset"] = "UTF-8"
     return({'id':car.id,'make':car.make,'model':car.model,'avg_rating':car.avg_rating} for car in carList)
-    #return Response(content=content, content_type='application/json')
+
 
 @app.get('/popular')
 def getPopularCars():

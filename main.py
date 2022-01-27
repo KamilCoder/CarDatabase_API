@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Response
 import requests,json
 from sqlalchemy import create_engine, desc
 from sqlalchemy.orm import sessionmaker
@@ -77,8 +77,9 @@ def rateCar(requestRate : RequestRate):
 @app.get('/cars')
 def getCars():
     carList = session.query(Car).all()
-    return ({'id':car.id,'make':car.make,'model':car.model,'avg_rating':car.avg_rating} for car in carList)
-
+    #response.headers["charset"] = "UTF-8"
+    return({'id':car.id,'make':car.make,'model':car.model,'avg_rating':car.avg_rating} for car in carList)
+    #return Response(content=content, content_type='application/json')
 
 @app.get('/popular')
 def getPopularCars():

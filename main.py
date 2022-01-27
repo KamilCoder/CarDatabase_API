@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Request, Response
-import requests,json
+import requests, json
 from fastapi.responses import HTMLResponse
 from sqlalchemy import create_engine, desc
 from sqlalchemy.orm import sessionmaker
@@ -27,10 +27,6 @@ def getMakesModelsData(make):
     url = 'https://vpic.nhtsa.dot.gov/api/vehicles/GetModelsForMake/'+make+'?format=json'
     data = requests.get(url).json()
     return data['Results']
-
-@app.get('/', response_class=HTMLResponse)
-def index():
-    return """<html><center/><h3/>Welcome in Car Database API app</html>"""
 
 @app.post('/cars')
 def postCars(requestCar : RequestCar):

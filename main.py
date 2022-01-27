@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Request, Response
 import requests,json
+from fastapi.responses import HTMLResponse
 from sqlalchemy import create_engine, desc
 from sqlalchemy.orm import sessionmaker
 from models import Car, Base, Rate
@@ -27,9 +28,9 @@ def getMakesModelsData(make):
     data = requests.get(url).json()
     return data['Results']
 
-@app.get('/')
+@app.get('/', response_class=HTMLResponse)
 def index():
-    return '''<html><h1>'Welcome in Car Database API app'</h1></html>'''
+    return """<html><center/><h3/>Welcome in Car Database API app</html>"""
 
 @app.post('/cars')
 def postCars(requestCar : RequestCar):

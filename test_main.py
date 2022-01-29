@@ -21,8 +21,8 @@ def test_popular_cars():
     assert response.status_code == 200
 
 def test_rate_car():
-    idTaker = requests.get('http://localhost:8000/cars')
-    id = str(idTaker.json()[0]['id'])
+    idOfAddedCar = requests.get('http://localhost:8000/cars').json()
+    id = str(idOfAddedCar[len(idOfAddedCar)-1]['id'])
     response = client.post('/rate', json={
     'car_id': id,
     'rating': 5
@@ -31,6 +31,6 @@ def test_rate_car():
     assert response.json() == {'message':'OK'}
 
 def test_delete_car():
-    idTaker = requests.get('http://localhost:8000/cars')
-    id = str(idTaker.json()[0]['id'])
+    idOfAddedCar = requests.get('http://localhost:8000/cars').json()
+    id = str(idOfAddedCar[len(idOfAddedCar)-1]['id'])
     response = client.delete('/cars/'+id)

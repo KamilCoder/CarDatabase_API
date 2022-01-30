@@ -77,12 +77,16 @@ def rateCar(requestRate : RequestRate):
 
 @app.get('/cars')
 def getCars():
-    carList = session.query(Car).all()
-    return({'id':car.id,'make':car.make,'model':car.model,'avg_rating':car.avg_rating} for car in carList)
-
+    try:
+        carList = session.query(Car).all()
+        return({'id':car.id,'make':car.make,'model':car.model,'avg_rating':car.avg_rating} for car in carList)
+    except:
+        return {"error":"Problem with database"}
 
 @app.get('/popular')
 def getPopularCars():
-    carList = session.query(Car).order_by(Car.rates_number.desc())
-    session.rollback()
-    return ({'id':car.id,'make':car.make,'model':car.model,'rates_number':car.rates_number} for car in carList)
+    try:
+        carList = session.query(Car).order_by(Car.rates_number.desc())
+        return ({'id':car.id,'make':car.make,'model':car.model,'rates_number':car.rates_number} for car in carList)
+    except:
+        return {"error":"Problem with database"}
